@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <string.h>
+#include <time.h>
+#if defined(__APPLE__)
+	#include <sys/time.h>
+#endif
+
 struct logger {
 	FILE * handle;
 	int close;
@@ -39,7 +45,15 @@ _logger(struct skynet_context * context, void *ud, int type, int session, uint32
 int
 logger_init(struct logger * inst, struct skynet_context *ctx, const char * parm) {
 	if (parm) {
-		inst->handle = fopen(parm,"w");
+		if (!strchr(parm, '.')) {
+			char tmp1[64], tmp2[128];
+			time_t t = time(NULL);
+			strftime(tmp1, 64, "%Y-%m%d-%H%M", localtime(&t));
+			sprintf(tmp2, "%s-%s", parm, tmp1);
+			inst->handle = fopen(tmp2, "w");
+		} else {
+			inst->handle = fopen(parm, "w");
+		}
 		if (inst->handle == NULL) {
 			return 1;
 		}
