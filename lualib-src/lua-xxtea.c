@@ -1,14 +1,14 @@
 /*
-	This is libray of http://en.wikipedia.org/wiki/XXTEA for lua for very simple encryption.
+    This is libray of http://en.wikipedia.org/wiki/XXTEA for lua for very simple encryption.
 
-	compile in gcc with
-		gcc --shared -fPIC -O2 -o xxtea.so xxtea.c
-	use in lua
-		require'xxtea'
-		str = 'something'
-		encstr = xxtea.encrypt( str, 'abcd1234abcd1234' )
-		decstr = xxtea.decrypt( encstr, 'abcd1234abcd1234' )
-	where the key is a 128 bit hex string
+    compile in gcc with
+        gcc --shared -fPIC -O2 -o xxtea.so xxtea.c
+    use in lua
+        require'xxtea'
+        str = 'something'
+        encstr = xxtea.encrypt( str, 'abcd1234abcd1234' )
+        decstr = xxtea.decrypt( encstr, 'abcd1234abcd1234' )
+    where the key is a 128 bit hex string
 */
 
 #include "skynet_malloc.h"
@@ -21,7 +21,7 @@
 
 #if defined(_MSC_VER)
 
-typedef  __int32 xxtea_long;
+typedef unsigned __int32 xxtea_long;
 
 #else
 
@@ -77,15 +77,15 @@ static void xxtea_long_decrypt(xxtea_long *v, xxtea_long len, xxtea_long *k)
     }
 }
 
-static char *fix_key_length(char *key, xxtea_long key_len)
+static unsigned char *fix_key_length(unsigned char *key, xxtea_long key_len)
 {
-    char *tmp = (char *)skynet_malloc(16);
+    unsigned char *tmp = (unsigned char *)skynet_malloc(16);
     memcpy(tmp, key, key_len);
     memset(tmp + key_len, '\0', 16 - key_len);
     return tmp;
 }
 
-static xxtea_long *xxtea_to_long_array(char *data, xxtea_long len, int include_length, xxtea_long *ret_len) {
+static xxtea_long *xxtea_to_long_array(unsigned char *data, xxtea_long len, int include_length, xxtea_long *ret_len) {
     xxtea_long i, n, *result;
 
     n = len >> 2;
@@ -106,9 +106,9 @@ static xxtea_long *xxtea_to_long_array(char *data, xxtea_long len, int include_l
     return result;
 }
 
-static  char *xxtea_to_byte_array(xxtea_long *data, xxtea_long len, int include_length, xxtea_long *ret_len) {
+static unsigned char *xxtea_to_byte_array(xxtea_long *data, xxtea_long len, int include_length, xxtea_long *ret_len) {
     xxtea_long i, n, m;
-     char *result;
+    unsigned char *result;
 
     n = len << 2;
     if (include_length) {
@@ -116,9 +116,9 @@ static  char *xxtea_to_byte_array(xxtea_long *data, xxtea_long len, int include_
         if ((m < n - 7) || (m > n - 4)) return NULL;
         n = m;
     }
-    result = (char *)skynet_malloc(n + 1);
+    result = (unsigned char *)skynet_malloc(n + 1);
     for (i = 0; i < n; i++) {
-        result[i] = ( char)((data[i >> 2] >> ((i & 3) << 3)) & 0xff);
+        result[i] = (unsigned char)((data[i >> 2] >> ((i & 3) << 3)) & 0xff);
     }
     result[n] = '\0';
     *ret_len = n;
@@ -126,8 +126,8 @@ static  char *xxtea_to_byte_array(xxtea_long *data, xxtea_long len, int include_
     return result;
 }
 
-static char *do_xxtea_encrypt( char *data, xxtea_long len,  char *key, xxtea_long *ret_len) {
-     char *result;
+static unsigned char *do_xxtea_encrypt(unsigned char *data, xxtea_long len, unsigned char *key, xxtea_long *ret_len) {
+    unsigned char *result;
     xxtea_long *v, *k, v_len, k_len;
 
     v = xxtea_to_long_array(data, len, 1, &v_len);
@@ -140,8 +140,8 @@ static char *do_xxtea_encrypt( char *data, xxtea_long len,  char *key, xxtea_lon
     return result;
 }
 
-static char *do_xxtea_decrypt( char *data, xxtea_long len,  char *key, xxtea_long *ret_len) {
-     char *result;
+static unsigned char *do_xxtea_decrypt(unsigned char *data, xxtea_long len, unsigned char *key, xxtea_long *ret_len) {
+    unsigned char *result;
     xxtea_long *v, *k, v_len, k_len;
 
     v = xxtea_to_long_array(data, len, 0, &v_len);
@@ -154,14 +154,14 @@ static char *do_xxtea_decrypt( char *data, xxtea_long len,  char *key, xxtea_lon
     return result;
 }
 
- char *xxtea_encrypt( char *data, xxtea_long data_len,  char *key, xxtea_long key_len, xxtea_long *ret_length)
+unsigned char *xxtea_encrypt(unsigned char *data, xxtea_long data_len, unsigned char *key, xxtea_long key_len, xxtea_long *ret_length)
 {
-     char *result;
+    unsigned char *result;
 
     *ret_length = 0;
 
     if (key_len < 16) {
-        char *key2 = fix_key_length(key, key_len);
+        unsigned char *key2 = fix_key_length(key, key_len);
         result = do_xxtea_encrypt(data, data_len, key2, ret_length);
         skynet_free(key2);
     }
@@ -173,14 +173,14 @@ static char *do_xxtea_decrypt( char *data, xxtea_long len,  char *key, xxtea_lon
     return result;
 }
 
-char *xxtea_decrypt( char *data, xxtea_long data_len,  char *key, xxtea_long key_len, xxtea_long *ret_length)
+unsigned char *xxtea_decrypt(unsigned char *data, xxtea_long data_len, unsigned char *key, xxtea_long key_len, xxtea_long *ret_length)
 {
-     char *result;
+    unsigned char *result;
 
     *ret_length = 0;
 
     if (key_len < 16) {
-         char *key2 = fix_key_length(key, key_len);
+        unsigned char *key2 = fix_key_length(key, key_len);
         result = do_xxtea_decrypt(data, data_len, key2, ret_length);
         skynet_free(key2);
     }
@@ -194,42 +194,42 @@ char *xxtea_decrypt( char *data, xxtea_long data_len,  char *key, xxtea_long key
 
 static int decrypt( lua_State *L )
 {
-	size_t textLength;
-	size_t keyLength;
-	const  char *text = luaL_checklstring( L, 1, &textLength );
-	const  char *key = luaL_checklstring( L, 2, &keyLength );
-	xxtea_long ret_length;
-	 char * result = xxtea_decrypt(( char *)text, (xxtea_long)textLength, ( char *)key, (xxtea_long)keyLength, &ret_length);
-	lua_pushlstring(L, result, ret_length);
-	skynet_free(result);
+    size_t textLength;
+    size_t keyLength;
+    const unsigned char *text = (const unsigned char *)luaL_checklstring( L, 1, &textLength );
+    const unsigned char *key = (const unsigned char *)luaL_checklstring( L, 2, &keyLength );
+    xxtea_long ret_length;
+    unsigned char * result = xxtea_decrypt((unsigned char *)text, (xxtea_long)textLength, (unsigned char *)key, (xxtea_long)keyLength, &ret_length);
+    lua_pushlstring(L, result, ret_length);
+    skynet_free(result);
 
-	return 1;
+    return 1;
 }
 
 static int encrypt( lua_State *L)
 {
-	size_t textLength;
-	size_t keyLength;
-	const  char *text = luaL_checklstring( L, 1, &textLength );
-        const  char *key = luaL_checklstring( L, 2, &keyLength );
-	xxtea_long ret_length;
-	 char * result = xxtea_encrypt(( char *)text, (xxtea_long)textLength, ( char *)key, (xxtea_long)keyLength, &ret_length);
-	lua_pushlstring(L, result, ret_length);
-	skynet_free(result);
+    size_t textLength;
+    size_t keyLength;
+    const unsigned char *text = (const unsigned char *)luaL_checklstring( L, 1, &textLength );
+    const unsigned char *key = (const unsigned char *)luaL_checklstring( L, 2, &keyLength );
+    xxtea_long ret_length;
+    unsigned char * result = xxtea_encrypt((unsigned char *)text, (xxtea_long)textLength, (unsigned char *)key, (xxtea_long)keyLength, &ret_length);
+    lua_pushlstring(L, result, ret_length);
+    skynet_free(result);
 
-	return 1;
+    return 1;
 }
 
 /* table of operations */
 static const struct luaL_Reg xxtea [] = {
-	{"encrypt", encrypt},
-	{"decrypt", decrypt},
-	{NULL, NULL}
+    {"encrypt", encrypt},
+    {"decrypt", decrypt},
+    {NULL, NULL}
 };
 
 /* register library */
 LUALIB_API int luaopen_xxtea( lua_State *L ){
-	luaL_checkversion(L);
-  	luaL_newlib(L, xxtea);
-  	return 1;
+    luaL_checkversion(L);
+    luaL_newlib(L, xxtea);
+    return 1;
 }
