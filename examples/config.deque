@@ -1,0 +1,12 @@
+root = "./"
+thread = 8
+logger = "test.log"
+harbor = 0
+start = "testdeque"	-- main script
+bootstrap = "snlua bootstrap"	-- The service for bootstrap
+
+lua_path = root .."lualib/?.lua"
+luaservice = root.."service/?.lua;"..root.."test/?.lua"
+lualoader = "lualib/loader.lua"
+cpath = root.."cservice/?.so"
+lua_cpath = "luaclib/?.so"
