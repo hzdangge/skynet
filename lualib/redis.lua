@@ -168,14 +168,32 @@ local function read_boolean(so)
 	return ok, result ~= 0
 end
 
+local function read_table(so)
+	local ok, result = read_response(so)
+
+    local new_reply = { }
+    for i = 1, #result, 2 do new_reply[result[i]] = result[i + 1] end
+    return ok, new_reply
+end
+
 function command:exists(key)
 	local fd = self[1]
 	return fd:request(compose_message ("EXISTS", key), read_boolean)
 end
 
+function command:hexists(key, value)
+	local fd = self[1]
+	return fd:request(compose_message ("HEXISTS", {key, value}), read_boolean)
+end
+
 function command:sismember(key, value)
 	local fd = self[1]
 	return fd:request(compose_message ("SISMEMBER", {key, value}), read_boolean)
+end
+
+function command:hgetall(key)
+	local fd = self[1]
+	return fd:request(compose_message ("HGETALL", key), read_table)
 end
 
 local function compose_table(lines, msg)
