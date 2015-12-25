@@ -1,11 +1,11 @@
 #include "skynet_malloc.h"
 #include "spinlock.h"
 
-#include "skynet.h"
 #include <lua.h>
 #include <lauxlib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <string.h>
 
