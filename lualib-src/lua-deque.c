@@ -1,6 +1,7 @@
 #include "skynet_malloc.h"
 #include "spinlock.h"
 
+#include "skynet.h"
 #include <lua.h>
 #include <lauxlib.h>
 #include <stdio.h>
