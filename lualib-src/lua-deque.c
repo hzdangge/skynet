@@ -28,11 +28,8 @@ struct deque {
 int
 lpush(lua_State *L) {
 	struct deque *q = checkdeque(L);
+	if (q == NULL) return 0;
 	SPIN_LOCK(q)
-	if (q == NULL) {
-		SPIN_UNLOCK(q)
-		return 0;
-	}
 	uint32_t elem = luaL_checkinteger(L, 2) & 0xFFFFFFFF;
 	struct node *pd = skynet_malloc(sizeof(*pd));
 	pd->elem = elem;
@@ -69,30 +66,29 @@ _pop(struct deque *q) {
 int
 lpop(lua_State *L) {
 	struct deque *q = checkdeque(L);
-	SPIN_LOCK(q)
 	if (q) {
+		SPIN_LOCK(q)
 		uint32_t elem = _pop(q);
 		if (elem > 0) {
 			lua_pushinteger(L, elem);
 			SPIN_UNLOCK(q)
 			return 1;
 		}
+		SPIN_UNLOCK(q)
 	}
-	SPIN_UNLOCK(q)
 	return 0;
 }
 
 int
 lgc(lua_State *L) {
 	struct deque *q = checkdeque(L);
-	SPIN_LOCK(q)
 	if (q) {
+		SPIN_LOCK(q)
 		for (;_pop(q) != 0;);
-
+		SPIN_UNLOCK(q)
+		SPIN_DESTROY(q)
+		skynet_free(q);
 	}
-	SPIN_UNLOCK(q)
-	SPIN_DESTROY(q)
-	skynet_free(q);
 	return 0;
 }
 
@@ -123,11 +119,11 @@ lclone(lua_State *L) {
 int
 lsize(lua_State *L) {
 	struct deque *q = checkdeque(L);
-	SPIN_LOCK(q)
 	if (q) {
+		SPIN_LOCK(q)
 		lua_pushinteger(L, q->size);
+		SPIN_UNLOCK(q)
 	} else lua_pushinteger(L, 0);
-	SPIN_UNLOCK(q)
 	return 1;
 }
 
