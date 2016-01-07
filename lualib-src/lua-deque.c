@@ -29,11 +29,11 @@ int
 lpush(lua_State *L) {
 	struct deque *q = checkdeque(L);
 	if (q == NULL) return 0;
-	SPIN_LOCK(q)
 	uint32_t elem = luaL_checkinteger(L, 2) & 0xFFFFFFFF;
 	struct node *pd = skynet_malloc(sizeof(*pd));
 	pd->elem = elem;
 	pd->next = NULL;
+	SPIN_LOCK(q)
 	if(q->tail) {
 		q->tail->next = pd;
 		q->tail = pd;
