@@ -9,17 +9,13 @@
 #include <assert.h>
 #include <string.h>
 
-struct node
-{
-	uint32_t elem;
-	struct node *next;
-};
-
 struct deque {
 	struct spinlock lock;
-	struct node *head;
-	struct node *tail;
-	uint32_t size;
+	uint32_t *buffer;
+	int head;
+	int tail;
+	int length;
+	int size;
 };
 
 #define checkdeque(L) \
@@ -30,81 +26,71 @@ lpush(lua_State *L) {
 	struct deque *q = checkdeque(L);
 	if (q == NULL) return 0;
 	uint32_t elem = luaL_checkinteger(L, 2) & 0xFFFFFFFF;
-	struct node *pd = skynet_malloc(sizeof(*pd));
-	pd->elem = elem;
-	pd->next = NULL;
+
 	SPIN_LOCK(q)
-	if(q->tail) {
-		q->tail->next = pd;
-		q->tail = pd;
-	} else {
-		q->head = q->tail = pd;
+	if (q->size >= q->length) {
+		SPIN_UNLOCK(q)
+		lua_pushboolean(L, 0);
+		return 1;
 	}
+	q->buffer[q->tail] = elem;
+	q->tail += 1;
+	if (q->tail >= q->length)
+		q->tail = 0;
 	q->size += 1;
 	SPIN_UNLOCK(q)
-	return 0;
-}
-
-uint32_t
-_pop(struct deque *q) {
-	struct node *pd = q->head;
-	if(pd) {
-		q->head = pd->next;
-		if(q->head == NULL) {
-			assert(pd == q->tail);
-			q->tail = NULL;
-		}
-		pd->next = NULL;
-		q->size -= 1;
-		uint32_t rtn = pd->elem;
-		skynet_free(pd);
-		return rtn;
-	}
-	return 0;
+	lua_pushboolean(L, 1);
+	return 1;
 }
 
 int
 lpop(lua_State *L) {
 	struct deque *q = checkdeque(L);
-	if (q) {
-		SPIN_LOCK(q)
-		uint32_t elem = _pop(q);
-		if (elem > 0) {
-			lua_pushinteger(L, elem);
-			SPIN_UNLOCK(q)
-			return 1;
-		}
+	if (q == NULL) return 0;
+	SPIN_LOCK(q)
+	if (q->size <= 0) {
 		SPIN_UNLOCK(q)
+		return 0;
 	}
-	return 0;
+	uint32_t elem = q->buffer[q->head];
+	q->head += 1;
+	if (q->head >= q->length)
+		q->head = 0;
+	q->size -= 1;
+	SPIN_UNLOCK(q)
+	lua_pushinteger(L, elem);
+	return 1;
 }
 
 int
 lgc(lua_State *L) {
 	struct deque *q = checkdeque(L);
-	if (q) {
-		SPIN_LOCK(q)
-		for (;_pop(q) != 0;);
-		SPIN_UNLOCK(q)
-		SPIN_DESTROY(q)
-		skynet_free(q);
-	}
+	if (q == NULL) return 0;
+	SPIN_LOCK(q)
+	skynet_free(q->buffer);
+	SPIN_UNLOCK(q)
+	SPIN_DESTROY(q)
 	return 0;
 }
 
 int
 lnew(lua_State *L) {
-	struct deque *q = skynet_malloc(sizeof(*q));
+	luaL_argcheck(L, lua_gettop(L) == 1, 1, "lnew: expected 1 argument");
+	lua_Integer len = luaL_checkinteger(L, 1);
+	if (len < 1) luaL_error(L, "deque length can't less than 1");
+	struct deque *q = lua_newuserdata(L, sizeof(*q));
 	memset(q, 0, sizeof(*q));
+	q->buffer = skynet_malloc(len*sizeof(uint32_t));
+	q->length = len;
 	lua_pushlightuserdata(L, q);
 	luaL_getmetatable(L, "dangge.deque");
 	lua_pushvalue(L, -1);
 	lua_pushcfunction(L, lgc);
 	lua_setfield(L, -2, "__gc");
-	lua_setmetatable(L, 1);
+	lua_setmetatable(L, 2);
 	lua_pop(L, 1);
 	SPIN_INIT(q)
-	return 1;
+	return 2;
 }
 
 int
