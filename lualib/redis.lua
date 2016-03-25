@@ -186,6 +186,11 @@ function command:hexists(key, value)
 	return fd:request(compose_message ("HEXISTS", {key, value}), read_boolean)
 end
 
+function command:hsetnx(key, field, value)
+	local fd = self[1]
+	return fd:request(compose_message ("HSETNX", {key, field, value}), read_boolean)
+end
+
 function command:sismember(key, value)
 	local fd = self[1]
 	return fd:request(compose_message ("SISMEMBER", {key, value}), read_boolean)
