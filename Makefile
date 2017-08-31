@@ -49,7 +49,7 @@ LUA_CLIB = skynet socketdriver bson mongo md5 netpack \
   clientsocket memory profile multicast \
   cluster crypt sharedata stm sproto lpeg \
   mysqlaux debugchannel crab xxtea lfs \
-  cmsgpack strh deque
+  cmsgpack strh deque syslog
 
 SKYNET_SRC = skynet_main.c skynet_handle.c skynet_module.c skynet_mq.c \
   skynet_server.c skynet_start.c skynet_timer.c skynet_error.c \
@@ -147,6 +147,9 @@ $(LUA_CLIB_PATH)/strh.so : lualib-src/lua-strh.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) -Iskynet-src $^ -o $@
 
 $(LUA_CLIB_PATH)/deque.so : lualib-src/lua-deque.c | $(LUA_CLIB_PATH)
+	$(CC) $(CFLAGS) $(SHARED) -Iskynet-src $^ -o $@
+
+$(LUA_CLIB_PATH)/syslog.so : lualib-src/lua-syslog.c | $(LUA_CLIB_PATH)
 	$(CC) $(CFLAGS) $(SHARED) -Iskynet-src $^ -o $@
 
 clean :
