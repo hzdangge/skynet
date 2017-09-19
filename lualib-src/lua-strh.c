@@ -115,6 +115,7 @@ _seri(lua_State *L, struct block *b, int len) {
 		}
 	}
 	lua_pushlstring(L, buffer, sz);
+	skynet_free(buffer);
 }
 
 static void
