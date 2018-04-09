@@ -88,6 +88,11 @@ function CMD.kick(source, fd)
 	gateserver.closeclient(fd)
 end
 
+function CMD.forcekick(source, fd)
+	gateserver.closeclient(fd)
+	skynet.send(watchdog, "lua", "forceClose", fd)
+end
+
 function handler.command(cmd, source, ...)
 	local f = assert(CMD[cmd])
 	return f(source, ...)
